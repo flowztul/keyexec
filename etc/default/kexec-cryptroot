@@ -1,0 +1,38 @@
+# Generate temporary intrd.img with LUKS master keys for kexec reboot
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+umask 0077
+CRYPTROOT_TMPDIR="$(mktemp -d --tmpdir=/dev/shm)"
+
+cleanup() {
+    shred -fu "${CRYPTROOT_TMPDIR}/etc/"*.key || true
+    shred -fu "${CRYPTROOT_TMPDIR}/initrd.img" || true
+    rm -rf "${CRYPTROOT_TMPDIR}"
+}
+
+mkdir -p "${CRYPTROOT_TMPDIR}/etc"
+
+trap cleanup INT TERM EXIT
+
+cp "${INITRD}" "${CRYPTROOT_TMPDIR}/initrd.img"
+
+cd "${CRYPTROOT_TMPDIR}"
+
+blkid -t TYPE=crypto_LUKS -s UUID -o value | while read UUID ; do
+        mapped="$(dmsetup info --columns --separator , | grep -F "$(echo "${UUID}" | tr -d -)" | cut -d , -f1)"
+        if [ -n "${mapped}" ] ; then
+	    	dmsetup --showkeys table "${mapped}" | cut -d ' ' -f5 | xxd -ps -g1 -r > "etc/${UUID}.key"
+	fi
+done
+
+find etc | cpio -H newc -o | gzip >> "${CRYPTROOT_TMPDIR}/initrd.img"
+
+cd -
+
+CRYPTROOT_INITRD="${CRYPTROOT_TMPDIR}/initrd.img"
+
+# If APPEND is empty, use current kernel command line, and force reboot on error
+if [ -z "${APPEND}" ] ; then
+    CRYPTROOT_APPEND="$(cat /proc/cmdline) panic=10"
+fi

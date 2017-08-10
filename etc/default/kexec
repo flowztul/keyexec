@@ -1,0 +1,28 @@
+# Defaults for kexec initscript
+# sourced by /etc/init.d/kexec and /etc/init.d/kexec-load
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+# Load a kexec kernel (true/false)
+LOAD_KEXEC=true
+
+# Kernel and initrd image
+KERNEL_IMAGE="/vmlinuz"
+INITRD="/initrd.img"
+
+# If empty, use current /proc/cmdline
+APPEND=""
+
+# Load the default kernel from grub config (true/false)
+USE_GRUB_CONFIG=false
+
+if [ -e /etc/default/kexec-cryptroot ] ; then
+    # Automatic LUKS unlock on kexec reboot
+    . /etc/default/kexec-cryptroot
+    
+    # Override INITRD
+    INITRD="${CRYPTROOT_INITRD:-$INITRD}"
+    
+    # If append is empty, override it
+    APPEND="${APPEND:-$CRYPTROOT_APPEND}"
+fi
