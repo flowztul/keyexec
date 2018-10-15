@@ -4,14 +4,24 @@ Collection of scripts to automatically unlock LUKS devices on kexec reboot.
 
 ## Compatibility
 
-Scripts were tested on Ubuntu 16.04 LTS (Xenial Xerus).
+Scripts were tested on Ubuntu 16.04 LTS (Xenial Xerus) and 18.04 LTS (Bionic Beaver)
 
 ## Usage
 
 1. Install kexec-tools
 1. Copy the files from `etc` to the corresponding directories in the root filesystem
 1. Run `update-initramfs -u -k all`
-1. Reboot
+
+### Ubuntu 16.04
+
+1. reboot
+
+### Ubuntu 18.04
+
+Ubuntu 16.04 used to allow simply rebooting now, and it would happily load and kexec the latest kernel, and the automagically-generated initramfs with LUKS key material. This seems to no longer work with Ubuntu 18.04. While systemd allows you to `systemctl kexec`, this doesn't seem to properly work either, at least not on non-UEFI systems. Untested are UEFI-based systems, but it is not unlikely that systemd will just kexec-reboot with the system standard initramfs. However, `systemctl kexec` will happily kexec-reboot a pre-loaded kernel and initramfs:
+
+1. Use `kexec-load.sh` to generate a temporary intramfs with key material, and kexec load it with the latest kernel.
+1. Use `systemctl kexec` to gracefully shutdown and kexec execute the preloaded kernel and initramfs.
 
 ## How does this work?
 
