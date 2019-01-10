@@ -34,5 +34,5 @@ CRYPTROOT_INITRD="${CRYPTROOT_TMPDIR}/initrd.img"
 
 # If APPEND is empty, use current kernel command line, and force reboot on error
 if [ -z "${APPEND}" ] ; then
-    CRYPTROOT_APPEND="$(cat /proc/cmdline) panic=10"
+    CRYPTROOT_APPEND="$(cat /proc/cmdline | sed -e 's,\s*panic=10,,' -e 's,BOOT_IMAGE=[^ ]* ,,') panic=10"
 fi
